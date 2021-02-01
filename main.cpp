@@ -26,6 +26,8 @@ float p_gamma  = 0.1;
 bool  p_clamp  = false;
 float p_radius = 3.0;
 int   p_nbSteps  = 10;
+float p_dt       = 0.5;
+float p_epsilon  = 0.00001;
 
 //Polysocpe
 polyscope::SurfaceMesh* primalSurf;
@@ -45,13 +47,14 @@ SHG3::RealVectors regularize(const Surf &surface,
                              double beta,
                              double gamma,
                              bool clamp,
-                             double dt = 1.0,
-                             double epsilon = 0.0001)
+                             double dt,
+                             double epsilon)
 {
   DigitalSurfaceRegularization<SH3::DigitalSurface> regul(surface);
   regul.init(alpha,beta,gamma);
   auto surfelIndex = regul.getSurfelIndex();
   regul.attachNormalVectors([&](SH3::SCell &c){ return normals[ surfelIndex[c] ];});
+  regul.enableVerbose();
   
   if (clamp)
     regul.regularize(nbsteps,dt,epsilon, DigitalSurfaceRegularization<SH3::DigitalSurface>::clampedAdvection);
@@ -88,7 +91,7 @@ void doWork()
     doWorkNormals();
   SH3::Cell2Index c2i;
   std::cout<<"Computing regularization... "<<std::endl;
-  auto newpos = regularize(surface, normalsII, p_nbSteps, p_alpha, p_beta, p_gamma, p_clamp);
+  auto newpos = regularize(surface, normalsII, p_nbSteps, p_alpha, p_beta, p_gamma, p_clamp, p_dt,p_epsilon);
   std::cout<< "done."<<std::endl;
  
   polyscope::registerSurfaceMesh("Regularized surface",newpos,faces);
@@ -103,8 +106,10 @@ void myCallback()
   ImGui::SliderFloat("Data attachment term", &p_alpha, 0.00001, 1.0);
   ImGui::SliderFloat("Alignment term", &p_beta, 0.00001, 1.0);
   ImGui::SliderFloat("Fairness term", &p_gamma, 0.00001, 1.0);
-  ImGui::SliderInt("Number of steps", &p_nbSteps, 0, 100);
-  ImGui::Checkbox("Clamping", &p_clamp);
+  ImGui::SliderInt("Grad.: Number of steps", &p_nbSteps, 0, 100);
+  ImGui::SliderFloat("Grad.: Initial learning rate", &p_dt, 0.1, 1.0);
+  ImGui::SliderFloat("Grad.: Epsilon stopping criterion", &p_epsilon, 0, 0.1);
+  ImGui::Checkbox("Grad.: Clamping", &p_clamp);
   
   if (ImGui::Button("Update"))
     doWork();
@@ -118,9 +123,7 @@ int main(int argc, char **argv)
   app.add_option("-i,--input,1", filename, "Input VOL file")->required()->check(CLI::ExistingFile);
   CLI11_PARSE(app,argc,argv);
   
-  
   polyscope::init();
-  
   auto params = SH3::defaultParameters() | SHG3::defaultParameters() |  SHG3::parametersGeometryEstimation();
   
   auto h=1.; //gridstep
