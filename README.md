@@ -24,8 +24,8 @@ make
 ```
 
 
-The tool can be used in commandline suing `regularization -i
-bunny-64.vol` for instance.
+Then, the  tool can be used in commandline, e.g. with  `regularization -i
+bunny-64.vol` 
 
 Additional Input VOL files can be found in the
 [VolGallery](https://github.com/dcoeurjo/VolGallery) repository.
