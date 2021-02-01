@@ -14,9 +14,11 @@ To compile the project, just clone (with its submodules) the repository:
 git clone --recursive https://github.com/dcoeurjo/digital-surface-regularization-TVCG.git
 ```
 
-and then use **cmake** to build the projects.
+and then use **cmake** to build the projects. The tool can be used in commandline suing `regularization -i
+bunny-64.vol` for instance.
 
-Additional Input VOL files can be found in the [VolGallery](https://github.com/dcoeurjo/VolGallery).
+Additional Input VOL files can be found in the
+[VolGallery](https://github.com/dcoeurjo/VolGallery) repository.
 
 
 # Citing
