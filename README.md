@@ -14,7 +14,7 @@ To compile the project, just clone (with its submodules) the repository:
 git clone --recursive https://github.com/dcoeurjo/digital-surface-regularization-TVCG.git
 ```
 
-and then use **cmake** to build the projects. For instance:
+and then use **cmake** to build the projects (boost and zlib required). For instance:
 
 ```
 mkdir build
