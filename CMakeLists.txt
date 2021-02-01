@@ -8,7 +8,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Polyscope---------------------------------------------------------------------
 add_subdirectory("${PROJECT_SOURCE_DIR}/deps/polyscope")
 
-
 # DGtal ------------------------------------------------------------------------
 SET(BUILD_EXAMPLES OFF CACHE BOOL "DGtal examples")
 add_subdirectory("${PROJECT_SOURCE_DIR}/deps/DGtal")
