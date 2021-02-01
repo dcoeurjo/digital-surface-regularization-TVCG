@@ -25,7 +25,7 @@ float p_beta   = 1.0;
 float p_gamma  = 0.1;
 bool  p_clamp  = false;
 float p_radius = 3.0;
-int   p_nbSteps  = 10;
+int   p_nbSteps  = 50;
 float p_dt       = 0.5;
 float p_epsilon  = 0.00001;
 
