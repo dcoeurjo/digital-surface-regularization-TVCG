@@ -1,4 +1,5 @@
 # Digital Surface Regularization with Guarantees
+![Linux/Mac build](https://github.com/dcoeurjo/digital-surface-regularization-TVCG/workflows/Linux/Mac%20build/badge.svg)
 
 This repository is an implementation of the article *[Digital surface regularization with guarantees](https://perso.liris.cnrs.fr/david.coeurjolly/publication/dcoeurjotvcg21/)*,
 David Coeurjolly, Jacques-Olivier Lachaud, Pierre Gueth, IEEE Transactionson Visualization and Computer Graphics, January 2021
