@@ -1,3 +1,26 @@
+/**
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as
+ *  published by the Free Software Foundation, either version 3 of the
+ *  License, or  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ **/
+
+/**
+ * @file
+ * @author David Coeurjolly (\c david.coeurjolly@liris.cnrs.fr )
+ * Laboratoire d'InfoRmatique en Image et Systemes d'information - LIRIS (CNRS, UMR 5205), CNRS, France
+ *
+ * @date 2021/01/25
+ */
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -54,6 +77,7 @@ SHG3::RealVectors regularize(const Surf &surface,
   regul.init(alpha,beta,gamma);
   auto surfelIndex = regul.getSurfelIndex();
   regul.attachNormalVectors([&](SH3::SCell &c){ return normals[ surfelIndex[c] ];});
+  
   regul.enableVerbose();
   
   if (clamp)
@@ -97,24 +121,26 @@ void doWork()
   polyscope::registerSurfaceMesh("Regularized surface",newpos,faces);
 }
 
-
 void myCallback()
 {
   ImGui::SliderFloat("Normal vector estimation radius (Integral Invariants)", &p_radius, 0.0, 5.0);
-  if (ImGui::Button("Update normal vectors"))
+  if (ImGui::Button("Compute normal vectors"))
     doWorkNormals();
+  ImGui::Separator();
+  ImGui::Text("Coefficient for each energy term:");
   ImGui::SliderFloat("Data attachment term", &p_alpha, 0.00001, 1.0);
   ImGui::SliderFloat("Alignment term", &p_beta, 0.00001, 1.0);
   ImGui::SliderFloat("Fairness term", &p_gamma, 0.00001, 1.0);
-  ImGui::SliderInt("Grad.: Number of steps", &p_nbSteps, 0, 100);
-  ImGui::SliderFloat("Grad.: Initial learning rate", &p_dt, 0.1, 1.0);
-  ImGui::SliderFloat("Grad.: Epsilon stopping criterion", &p_epsilon, 0, 0.1);
-  ImGui::Checkbox("Grad.: Clamping", &p_clamp);
+  ImGui::Separator();
+  ImGui::Text("Gradient descent parameters:");
+  ImGui::SliderFloat("Initial learning rate", &p_dt, 0.1, 1.0);
+  ImGui::SliderInt("Number of steps", &p_nbSteps, 0, 100);
+  ImGui::SliderFloat("Gradient norm stop", &p_epsilon, 0, 0.01);
+  ImGui::Checkbox("Clamping", &p_clamp);
   
-  if (ImGui::Button("Update"))
+  if (ImGui::Button("Compute"))
     doWork();
 }
-
 
 int main(int argc, char **argv)
 {
