@@ -34,6 +34,9 @@ bunny-64.vol`
 Additional Input VOL files can be found in the
 [VolGallery](https://github.com/dcoeurjo/VolGallery) repository.
 
+For comparison, we have included  Dual Contouring and Marching Cubes
+approaches on the indicator function using [ligigl](https://libigl.github.io). 
+
 
 # Citing
 
