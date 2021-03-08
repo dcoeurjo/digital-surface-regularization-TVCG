@@ -164,7 +164,7 @@ void doWorkDualContouring()
   assert((step(0) == step(1))&&(step(0) == step(2)));
   
   // Dual contouring parameters
-  bool constrained = p_constrainted;
+  bool constrained = p_constrained;
   bool triangles = false;
   bool root_finding = false;
   
