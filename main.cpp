@@ -33,6 +33,11 @@
 #include <polyscope/polyscope.h>
 #include <polyscope/surface_mesh.h>
 
+#include <igl/grid.h>
+#include <igl/dual_contouring.h>
+#include <igl/marching_cubes.h>
+
+
 #include "deps/CLI11/CLI11.hpp"
 
 using namespace DGtal;
@@ -51,11 +56,14 @@ float p_radius = 3.0;
 int   p_nbSteps  = 50;
 float p_dt       = 0.5;
 float p_epsilon  = 0.00001;
+bool  p_constrained = false;
 
 //Polysocpe
 polyscope::SurfaceMesh* primalSurf;
 CountedPtr<SH3::BinaryImage> binary_image;
 CountedPtr< SH3::DigitalSurface > surface;
+CanonicSCellEmbedder<SH3::KSpace> sembedder;
+
 SH3::SurfelRange surfels;
 SH3::RealVectors normalsII;
 SH3::KSpace K;
@@ -121,6 +129,115 @@ void doWork()
   polyscope::registerSurfaceMesh("Regularized surface",newpos,faces);
 }
 
+void doWorkDualContouring()
+{
+  if (normalsII.size()==0)
+    doWorkNormals();
+  
+  std::cout<<"Computing DC... "<<std::endl;
+  Eigen::MatrixXd V;
+  Eigen::MatrixXi Q,F;
+  Eigen::MatrixXd mcV,mcN;
+  Eigen::MatrixXi mcF;
+  
+  //Remap the normals
+  std::map<Point, RealPoint> surfeltonormal;
+  for(auto i=0;i < normalsII.size(); ++i)
+  {
+    auto p = sembedder(surfels[i]);
+    Point surfcenter(2*p[0],2*p[1],2*p[2]);
+    surfeltonormal[ surfcenter ] = normalsII[i];
+  }
+  // Grid parameters
+  auto low = binary_image->domain().lowerBound();
+  auto up  = binary_image->domain().upperBound();
+  std::cout<<low<<" "<<up<<std::endl;
+  const Eigen::RowVector3d min_corner(low[0],low[1],low[2]);
+  const Eigen::RowVector3d max_corner(up[0],up[1],up[2]);
+  const int s = 256;
+  int nx = up[0] - low[0]+1;
+  int ny = up[1] - low[1]+1;
+  int nz = up[2] - low[2]+1;
+  const Eigen::RowVector3d step =
+  (max_corner-min_corner).array()/(Eigen::RowVector3d(nx,ny,nz).array()-1);
+  // Sparse grid below assumes regular grid
+  assert((step(0) == step(1))&&(step(0) == step(2)));
+  
+  // Dual contouring parameters
+  bool constrained = p_constrained;
+  bool triangles = false;
+  bool root_finding = false;
+  
+  //Following libIGL tutorial 715
+  
+  // Indicator function
+  const auto & f_digital = [&](const Eigen::RowVector3d & x)
+  {
+    Point p  ((int)std::round(x[0]),
+              (int)std::round(x[1]),
+              (int)std::round(x[2]));
+    if ((binary_image->domain().isInside(p)) && binary_image->operator()(p))
+      return -1.0;
+    else
+      return 1.0;
+  };
+  
+  // Simple finite difference gradients
+  const auto & fd = [](
+                       const std::function<double(const Eigen::RowVector3d&)> & ff,
+                       const Eigen::RowVector3d & x)->Eigen::RowVector3d
+  {
+    const double eps = 1.0 ;
+    Eigen::RowVector3d g;
+    for(int c = 0;c<3;c++)
+    {
+      const Eigen::RowVector3d xp = x+eps*Eigen::RowVector3d((c==0) ? 1.0 : 0.0, (c==1) ? 1.0 : 0.0, (c==2) ? 1.0 : 0.0);
+      const double fp = ff(xp);
+      const Eigen::RowVector3d xn = x-eps*Eigen::RowVector3d((c==0) ? 1.0 : 0.0, (c==1) ? 1.0 : 0.0, (c==2) ? 1.0 : 0.0);
+      const double fn = ff(xn);
+      g(c) = (fp-fn)/(2*eps);
+    }
+    return g;
+  };
+  
+  const auto  &f_grad_digital = [&fd,&f_digital](const Eigen::RowVector3d & x)->Eigen::RowVector3d
+  {
+    return fd(f_digital,x).normalized();
+  };
+  
+  const auto  &f_grad_mapII = [&](const Eigen::RowVector3d & x)->Eigen::RowVector3d
+  {
+    Point surfcenter(2*x[0],2*x[1],2*x[2]);
+    RealPoint normal = surfeltonormal[ surfcenter ];
+    if (normal == RealPoint::zero)
+    {
+      std::cout << "Unknown surfel" << surfcenter << std::endl;
+      exit(21);
+    }
+    Eigen::RowVector3d  n(normal[0], normal[1], normal[2]);
+    return n;
+  };
+  
+  igl::dual_contouring(f_digital,f_grad_mapII,min_corner,max_corner,nx,ny,nz,constrained,triangles,root_finding,V,Q);
+  polyscope::registerSurfaceMesh("DC digital/II gradient",V,Q);
+  
+  igl::dual_contouring(f_digital,f_grad_digital,min_corner,max_corner,nx,ny,nz,constrained,triangles,root_finding,V,Q);
+  polyscope::registerSurfaceMesh("DC digital/finite-diff gradient",V,Q);
+  
+  //Marching-Cubes
+  Eigen::MatrixXd GV;
+  igl::grid(Eigen::RowVector3i(nx,ny,nz),GV);
+  Eigen::VectorXd Gf(GV.rows());
+  igl::parallel_for(GV.rows(),[&](const int i)
+                    {
+    GV.row(i).array() *= (max_corner-min_corner).array();
+    GV.row(i) += min_corner;
+    Gf(i) = f_digital(GV.row(i));
+  },1000ul);
+  igl::marching_cubes(Gf,GV,nx,ny,nz,0,mcV,mcF);
+  polyscope::registerSurfaceMesh("MC",mcV,mcF);
+}
+
 void myCallback()
 {
   ImGui::SliderFloat("Normal vector estimation radius (Integral Invariants)", &p_radius, 0.0, 5.0);
@@ -140,6 +257,14 @@ void myCallback()
   
   if (ImGui::Button("Compute"))
     doWork();
+
+  ImGui::Separator();
+  ImGui::TextWrapped("For comparison, we also include the Dual Contouring and Marching Cubes approaches on the indicator function.");
+  ImGui::TextWrapped("For DC, two functors for the gradient are given: one using finite difference of the indicator function, the other one uses a remapping of the Integral Invariant normal vectors.");
+  
+  ImGui::Checkbox("Force DC to clamp the vertices", &p_constrained);
+  if (ImGui::Button("Compute DC/MC"))
+    doWorkDualContouring();
 }
 
 int main(int argc, char **argv)
