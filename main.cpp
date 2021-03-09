@@ -191,9 +191,9 @@ void doWorkDualContouring()
     Eigen::RowVector3d g;
     for(int c = 0;c<3;c++)
     {
-      const Eigen::RowVector3d xp = x+eps*Eigen::RowVector3d(c==0,c==1,c==2);
+      const Eigen::RowVector3d xp = x+eps*Eigen::RowVector3d((c==0) ? 1.0 : 0.0, (c==1) ? 1.0 : 0.0, (c==2) ? 1.0 : 0.0);
       const double fp = ff(xp);
-      const Eigen::RowVector3d xn = x-eps*Eigen::RowVector3d(c==0,c==1,c==2);
+      const Eigen::RowVector3d xn = x-eps*Eigen::RowVector3d((c==0) ? 1.0 : 0.0, (c==1) ? 1.0 : 0.0, (c==2) ? 1.0 : 0.0);
       const double fn = ff(xn);
       g(c) = (fp-fn)/(2*eps);
     }
