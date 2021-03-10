@@ -4,6 +4,8 @@
 This repository is an implementation of the article *[Digital surface regularization with guarantees](https://perso.liris.cnrs.fr/david.coeurjolly/publication/dcoeurjotvcg21/)*,
 David Coeurjolly, Jacques-Olivier Lachaud, Pierre Gueth, IEEE Transactionson Visualization and Computer Graphics, January 2021
 
+![](https://perso.liris.cnrs.fr/david.coeurjolly/publication/dcoeurjotvcg21/image.png)
+
 # Building
 
 The code is a graphical interface to the CPU regularization code available
