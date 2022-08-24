@@ -8,7 +8,7 @@ David Coeurjolly, Jacques-Olivier Lachaud, Pierre Gueth, IEEE Transactionson Vis
 # Building
 
 The code is a graphical interface to the CPU regularization code available
-in [DGtal](dgtal.org) using [polyscope](polyscope.run).
+in [DGtal](https://dgtal.org) using [polyscope](https://polyscope.run).
 
 To compile the project, just clone (with its submodules) the repository:
 
